@@ -6,6 +6,129 @@ package pa9;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-class GraphTest {
+import java.util.Arrays;
+import java.util.HashSet;
 
+class GraphTest {
+	@Test
+	void testNegativeCycle() {
+		Graph g1 = new GraphImp(5);
+		g1.addWeightedEdge(0, 1, 1);
+		g1.addWeightedEdge(1, 3, 2);
+		g1.addWeightedEdge(0, 2, 3);
+		g1.addWeightedEdge(2, 4, -1);
+		assertFalse(g1.hasNegativeCycle()); //no cycle
+		g1.addWeightedEdge(3, 0, -2);
+		assertFalse(g1.hasNegativeCycle()); //positive cycle
+		g1.addWeightedEdge(4, 2, 1);
+		assertFalse(g1.hasNegativeCycle()); //zero cycle
+		g1.addWeightedEdge(4, 0, -4);
+		assertTrue(g1.hasNegativeCycle()); //negative cycle
+	}
+	
+	@Test
+	void shortestPath() {
+		Graph g1 = new GraphImp(5);
+		g1.addWeightedEdge(0, 1, 1);
+		g1.addWeightedEdge(1, 3, 2);
+		g1.addWeightedEdge(0, 2, 3);
+		g1.addWeightedEdge(2, 4, -1);
+		assertArrayEquals(new int[] {0, 1, 3, 3, 2}, g1.shortestPath(0)); //all nodes reachacble no loops
+		assertArrayEquals(new int[] {Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, 0}, g1.shortestPath(4)); //some nodes not reachable
+		
+		g1.addWeightedEdge(3, 0, -2);
+		assertArrayEquals(new int[] {0, 1, 3, 3, 2}, g1.shortestPath(0)); // positive cycle
+		assertArrayEquals(new int[] {Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, 0}, g1.shortestPath(4));
+		
+		g1.addWeightedEdge(4, 2, 1);
+		assertArrayEquals(new int[] {0, 1, 3, 3, 2}, g1.shortestPath(0)); // zero cycle
+		assertArrayEquals(new int[] {Integer.MAX_VALUE, Integer.MAX_VALUE, 1, Integer.MAX_VALUE, 0}, g1.shortestPath(4));
+		
+		g1.addWeightedEdge(4, 0, -4); // negative cycle
+		assertArrayEquals(new int[] {Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE}, g1.shortestPath(0));
+	}
+	
+	@Test
+	void testPrim() {
+		GraphImp g1 = new GraphImp(5);
+		g1.addUndirected(0, 1, 1);
+		g1.addUndirected(1, 3, 2);
+		g1.addUndirected(0, 2, 3);
+		g1.addUndirected(2, 4, -1);
+		
+		HashSet mini = g1.prim();
+		assertEquals(4, mini.size());
+		assertEquals(5, dfsSet(getTree(mini)).size());
+		assertEquals(5, sum(mini));
+		
+		g1.addUndirected(4, 3, -10); //negative weight cycle
+		HashSet mini2 = g1.prim();
+		assertEquals(4, mini2.size());
+		assertEquals(5, dfsSet(getTree(mini2)).size());
+		assertEquals(-8, sum(mini2));
+		
+		g1.addUndirected(1, 2, 0); //zero edge
+		HashSet mini3 = g1.prim();
+		assertEquals(4, mini3.size());
+		assertEquals(5, dfsSet(getTree(mini3)).size());
+		assertEquals(-10, sum(mini3));
+	}
+	
+	@Test
+	void testKruskal() {
+		GraphImp g1 = new GraphImp(5);
+		g1.addUndirected(0, 1, 1);
+		g1.addUndirected(1, 3, 2);
+		g1.addUndirected(0, 2, 3);
+		g1.addUndirected(2, 4, -1);
+		
+		HashSet mini = g1.kruskal();
+		assertEquals(4, mini.size());
+		assertEquals(5, dfsSet(getTree(mini)).size());
+		assertEquals(5, sum(mini));
+		
+		g1.addUndirected(4, 3, -10); //negative weight cycle
+		HashSet mini2 = g1.kruskal();
+		assertEquals(4, mini2.size());
+		assertEquals(5, dfsSet(getTree(mini2)).size());
+		assertEquals(-8, sum(mini2));
+		
+		g1.addUndirected(1, 2, 0); //zero edge
+		HashSet mini3 = g1.kruskal();
+		assertEquals(4, mini3.size());
+		assertEquals(5, dfsSet(getTree(mini3)).size());
+		assertEquals(-10, sum(mini3));
+	}
+	
+	public GraphImp getTree(HashSet<GraphImp.Edge> set) {
+		int n = set.size() + 1;
+ 		GraphImp res = new GraphImp(n);
+ 		for (GraphImp.Edge e: set) 
+ 			res.addUndirected(e.u, e.v, 0);
+ 		return res;
+	}
+	public void dfs(GraphImp tree, HashSet<Integer> visited, int curr) {
+		for (GraphImp.Edge e: tree.list.get(curr)) {
+			if (!visited.contains(e.v)) {
+				visited.add(e.v);
+				dfs(tree, visited, e.v);
+			}
+		}
+	}
+	public HashSet dfsSet(GraphImp tree) {
+		HashSet vi = new HashSet<Integer>();
+		vi.add(0);
+		dfs(tree, vi, 0);
+		return vi;
+	}
+	public int sum(HashSet<GraphImp.Edge> set) {
+		int res = 0;
+		for (GraphImp.Edge e: set)
+			res += e.weight;
+		return res;
+	}
 }
+
+
+
+
